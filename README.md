@@ -65,16 +65,37 @@ The system is composed of a single Python script (`queuectl.py`) that acts as th
     ```
     Otherwise, ensure your local Redis server is running.
 
+4.  **Making `queuectl` a Command (Optional but Recommended)**
+
+    To use `queuectl` as a regular command, you need to make the `queuectl.py` script executable and accessible from your system's PATH.
+
+    **On Windows:**
+    A batch file `queuectl.bat` is provided which acts as an alias. To use it, add the project directory to your PATH.
+    ```cmd
+    set PATH=%PATH%;C:\path\to\flamassignment
+    ```
+    (Replace `C:\path\to\flamassignment` with the actual path to the project directory).
+
+    **On Linux/macOS:**
+    You can create a symbolic link to `queuectl.py` in a directory that is in your PATH, for example `/usr/local/bin`.
+    ```sh
+    # Make the script executable
+    chmod +x queuectl.py
+    # Create a symbolic link
+    sudo ln -s /path/to/flamassignment/queuectl.py /usr/local/bin/queuectl
+    ```
+    (Replace `/path/to/flamassignment` with the actual path to the project directory).
+
 ## Command Reference
 
-All commands are run through `queuectl.py`.
+All commands are run through the `queuectl` command.
 
 ### `enqueue`
 Adds a new job to the queue.
 
 **Usage:**
 ```sh
-python queuectl.py enqueue <json_spec>
+queuectl enqueue <json_spec>
 ```
 
 **Argument:**
@@ -87,16 +108,16 @@ python queuectl.py enqueue <json_spec>
 -   `max_retries` (optional): The number of times to retry a failed job. Defaults to the value of `config:max_retries` or `3`.
 -   `timeout` (optional): The maximum number of seconds the job can run before being terminated. Defaults to `0` (no timeout).
 
-**Example (PowerShell):**
-```powershell
+**Example (Command Prompt - Windows):**
+```cmd
 # Enqueue a high-priority job that times out
-python queuectl.py enqueue --% "{\"id\":\"job1\", \"command\":\"timeout /t 10\", \"priority\": 1, \"timeout\": 5}"
+queuectl enqueue "{\"id\":\"job1\", \"command\":\"timeout /t 10\", \"priority\": 1, \"timeout\": 5}"
 ```
 
-**Example (Bash/Zsh):**
+**Example (Bash/Zsh/PowerShell):**
 ```bash
 # Enqueue a high-priority job that times out
-python queuectl.py enqueue '{"id":"job1", "command":"sleep 10", "priority": 1, "timeout": 5}'
+queuectl enqueue '{"id":"job1", "command":"sleep 10", "priority": 1, "timeout": 5}'
 ```
 
 ---
@@ -112,13 +133,13 @@ Manages worker processes.
 **Usage:**
 ```sh
 # Start a single worker in the foreground
-python queuectl.py worker start
+queuectl worker start
 
 # Start 4 workers in the background
-python queuectl.py worker start --count 4
+queuectl worker start --count 4
 
 # Signal all workers to stop
-python queuectl.py worker stop
+queuectl worker stop
 ```
 
 ---
@@ -129,7 +150,7 @@ Shows a summary of all job states and active workers.
 
 **Usage:**
 ```sh
-python queuectl.py status
+queuectl status
 ```
 
 ---
@@ -140,7 +161,7 @@ Lists jobs and their details for a given state.
 
 **Usage:**
 ```sh
-python queuectl.py list --state <state>
+queuectl list --state <state>
 ```
 
 **Argument:**
@@ -151,7 +172,7 @@ python queuectl.py list --state <state>
 **Example:**
 ```sh
 # List all jobs in the Dead Letter Queue
-python queuectl.py list --state dead
+queuectl list --state dead
 ```
 
 ---
@@ -167,10 +188,10 @@ Manages the Dead Letter Queue (DLQ).
 **Usage:**
 ```sh
 # List all jobs in the DLQ
-python queuectl.py dlq list
+queuectl dlq list
 
 # Retry a specific job from the DLQ
-python queuectl.py dlq retry <job-id>
+queuectl dlq retry <job-id>
 ```
 
 ---
@@ -192,10 +213,10 @@ Manages system configuration.
 **Usage:**
 ```sh
 # Set the default max retries to 5
-python queuectl.py config set max-retries 5
+queuectl config set max-retries 5
 
 # Get the current backoff-base value
-python queuectl.py config get backoff-base
+queuectl config get backoff-base
 ```
 
 ---
@@ -206,7 +227,7 @@ Launches a minimal web dashboard for real-time monitoring.
 
 **Usage:**
 ```sh
-python queuectl.py webui [--host <ip>] [--port <port>]
+queuectl webui [--host <ip>] [--port <port>]
 ```
 
 **Arguments:**
@@ -216,7 +237,7 @@ python queuectl.py webui [--host <ip>] [--port <port>]
 **Example:**
 ```sh
 # Run the web UI on all network interfaces on port 8080
-python queuectl.py webui --host 0.0.0.0 --port 8080
+queuectl webui --host 0.0.0.0 --port 8080
 ```
 
 ## Testing Instructions

@@ -9,7 +9,7 @@ import redis
 def run_command(command, wait=True, **kwargs):
     """Helper to run a command and print its output."""
     print(f"\n--- Running: {' '.join(command)} ---")
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, **kwargs)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True, **kwargs)
     if wait:
         stdout, stderr = process.communicate()
         if stdout:
@@ -29,7 +29,7 @@ def main():
     try:
         # 1. Cleanup and Preparation
         print("--- Preparing for demo: Cleaning up old processes and data ---")
-        run_command(["python", "queuectl.py", "worker", "stop"])
+        run_command(["queuectl", "worker", "stop"])
         
         try:
             run_command(["docker", "exec", "fervent_wilson", "redis-cli", "flushall"])
@@ -37,16 +37,16 @@ def main():
             print("Could not flush Redis via Docker. Please ensure Docker is running and the container 'fervent_wilson' exists.", file=sys.stderr)
             pass
 
-        run_command(["python", "queuectl.py", "config", "set", "max-retries", "2"])
-        run_command(["python", "queuectl.py", "config", "set", "backoff-base", "2"])
+        run_command(["queuectl", "config", "set", "max-retries", "2"])
+        run_command(["queuectl", "config", "set", "backoff-base", "2"])
 
         # 2. Start Background Processes
         print("\n--- Starting background processes (Web UI and Worker) ---")
-        webui_process = run_command(["python", "queuectl.py", "webui", "--port", "5001"], wait=False)
+        webui_process = run_command(["queuectl", "webui", "--port", "5001"], wait=False)
         time.sleep(3)
         print("Web UI should be available at http://127.0.0.1:5001")
 
-        worker_process = run_command(["python", "queuectl.py", "worker", "start"], wait=False)
+        worker_process = run_command(["queuectl", "worker", "start"], wait=False)
         time.sleep(2)
 
         # 3. Demo Sequence
@@ -55,23 +55,23 @@ def main():
 
         print("\nStep 1: Enqueueing a successful job.")
         job_spec_success = json.dumps({"command": "echo 'This job completed successfully!'"})
-        run_command(["python", "queuectl.py", "enqueue", job_spec_success])
+        run_command(["queuectl", "enqueue", job_spec_success])
         
         print("\nStep 2: Enqueueing a job that will fail and go to the DLQ.")
         job_spec_fail = json.dumps({"command": "non_existent_command"})
-        run_command(["python", "queuectl.py", "enqueue", job_spec_fail])
+        run_command(["queuectl", "enqueue", job_spec_fail])
         
         print("\nStep 3: Enqueueing a job that will time out.")
         job_spec_timeout = json.dumps({"command": "timeout /t 10", "timeout": 3, "max_retries": 1})
-        run_command(["python", "queuectl.py", "enqueue", job_spec_timeout])
+        run_command(["queuectl", "enqueue", job_spec_timeout])
         
         print("\nStep 4: Enqueueing jobs with different priorities to show priority processing.")
         job_spec_low = json.dumps({"id": "job-low", "command": "echo 'Low priority job'", "priority": 10})
         job_spec_high = json.dumps({"id": "job-high", "command": "echo 'High priority job'", "priority": 1})
         job_spec_medium = json.dumps({"id": "job-medium", "command": "echo 'Medium priority job'", "priority": 5})
-        run_command(["python", "queuectl.py", "enqueue", job_spec_low])
-        run_command(["python", "queuectl.py", "enqueue", job_spec_medium])
-        run_command(["python", "queuectl.py", "enqueue", job_spec_high])
+        run_command(["queuectl", "enqueue", job_spec_low])
+        run_command(["queuectl", "enqueue", job_spec_medium])
+        run_command(["queuectl", "enqueue", job_spec_high])
         
         print("\n--- Waiting for worker to process all jobs... ---")
         r = redis.Redis(decode_responses=True)
@@ -83,7 +83,7 @@ def main():
         time.sleep(2)
 
         print("\nStep 5: Retrying a job from the DLQ.")
-        dlq_jobs_output = subprocess.check_output(["python", "queuectl.py", "list", "--state", "dead"]).decode()
+        dlq_jobs_output = subprocess.check_output(["queuectl", "list", "--state", "dead"], shell=True).decode()
         
         # Write to file for debugging
         with open("dlq_output.json", "w") as f:
@@ -99,7 +99,7 @@ def main():
             if dlq_jobs:
                 job_to_retry = dlq_jobs[0].get("id")
                 if job_to_retry:
-                    run_command(["python", "queuectl.py", "dlq", "retry", job_to_retry])
+                    run_command(["queuectl", "dlq", "retry", job_to_retry])
                     print(f"Job {job_to_retry} sent for retry. It will fail again and return to the DLQ.")
                     time.sleep(15)
             else:
@@ -115,7 +115,7 @@ def main():
         print("\n--- Tearing down demo ---")
         if worker_process:
             print("Stopping worker...")
-            run_command(["python", "queuectl.py", "worker", "stop"])
+            run_command(["queuectl", "worker", "stop"])
             worker_process.terminate()
         if webui_process:
             print("Stopping web UI...")

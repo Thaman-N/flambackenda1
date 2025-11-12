@@ -44,7 +44,7 @@ class TestQueueCTL(unittest.TestCase):
         """Tear down after each test. This runs after every single test."""
         if self.worker_process and self.worker_process.poll() is None:
             try:
-                subprocess.run(["python", "queuectl.py", "worker", "stop"], timeout=15)
+                subprocess.run(["queuectl", "worker", "stop"], timeout=15, shell=True)
                 if self.worker_process.poll() is None:
                     self.worker_process.terminate()
                     self.worker_process.wait(timeout=5)
@@ -59,7 +59,7 @@ class TestQueueCTL(unittest.TestCase):
 
     def _run_command(self, command):
         """Helper function to run a queuectl command."""
-        return subprocess.run(["python", "queuectl.py"] + command, capture_output=True, text=True)
+        return subprocess.run(["queuectl"] + command, capture_output=True, text=True, shell=True)
 
     def _wait_for_redis_state(self, check_func, timeout=20, interval=0.5):
         """
@@ -113,7 +113,7 @@ class TestQueueCTL(unittest.TestCase):
         result = self._run_command(["enqueue", job_spec])
         job_id = result.stdout.strip().split()[2]
         
-        self.worker_process = subprocess.Popen(["python", "queuectl.py", "worker", "start"])
+        self.worker_process = subprocess.Popen(["queuectl", "worker", "start"], shell=True)
         
         self.assertTrue(self._wait_for_redis_state(lambda r: r.llen("queue:completed") == 1), "Job should be completed")
         
@@ -139,7 +139,7 @@ class TestQueueCTL(unittest.TestCase):
         result = self._run_command(["enqueue", job_spec])
         job_id = result.stdout.strip().split()[2]
 
-        self.worker_process = subprocess.Popen(["python", "queuectl.py", "worker", "start"])
+        self.worker_process = subprocess.Popen(["queuectl", "worker", "start"], shell=True)
         
         self.assertTrue(self._wait_for_redis_state(lambda r: r.llen("queue:dead") == 1, timeout=30), "Job should be in DLQ after exhausting retries")
         
@@ -186,7 +186,7 @@ class TestQueueCTL(unittest.TestCase):
         result = self._run_command(["enqueue", job_spec])
         job_id = result.stdout.strip().split()[2]
 
-        self.worker_process = subprocess.Popen(["python", "queuectl.py", "worker", "start"])
+        self.worker_process = subprocess.Popen(["queuectl", "worker", "start"], shell=True)
         
         self.assertTrue(self._wait_for_redis_state(lambda r: r.llen("queue:dead") == 1), "Job should be in DLQ due to timeout")
         
@@ -216,7 +216,7 @@ class TestQueueCTL(unittest.TestCase):
         actual_order_ids = self.redis_conn.zrange("queue:priority", 0, -1)
         self.assertEqual(actual_order_ids, expected_order_ids, "Initial priority queue order is incorrect")
 
-        self.worker_process = subprocess.Popen(["python", "queuectl.py", "worker", "start"])
+        self.worker_process = subprocess.Popen(["queuectl", "worker", "start"], shell=True)
 
         self.assertTrue(self._wait_for_redis_state(lambda r: r.llen("queue:completed") == 3), "All jobs should be completed")
 
@@ -227,7 +227,7 @@ class TestQueueCTL(unittest.TestCase):
     def test_10_webui_starts(self):
         """Test that the web UI starts without crashing."""
         print("Running test_10_webui_starts...")
-        self.webui_process = subprocess.Popen(["python", "queuectl.py", "webui", "--port", "5001"])
+        self.webui_process = subprocess.Popen(["queuectl", "webui", "--port", "5001"], shell=True)
         time.sleep(2) # Give the server time to start
         
         # Check if the process is still running
@@ -244,7 +244,7 @@ class TestQueueCTL(unittest.TestCase):
     def test_07_worker_graceful_shutdown(self):
         """Test the graceful shutdown of a worker."""
         print("Running test_07_worker_graceful_shutdown...")
-        self.worker_process = subprocess.Popen(["python", "queuectl.py", "worker", "start"])
+        self.worker_process = subprocess.Popen(["queuectl", "worker", "start"], shell=True)
         time.sleep(2)
         
         active_workers = self.redis_conn.smembers("workers:active")
