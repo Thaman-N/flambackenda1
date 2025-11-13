@@ -4,6 +4,9 @@ QueueCTL is a minimal, production-grade background job queue system built in Pyt
 
 This system manages background jobs with worker processes, handles retries using exponential backoff, and maintains a Dead Letter Queue (DLQ) for permanently failed jobs.
 
+Demo1 video: https://drive.google.com/file/d/1IsUO-dywC6Z1m2WqtLJYLkyVOOKg1kEK/view?usp=sharing
+Demo2 video: https://drive.google.com/file/d/129vuGAM88AFTWjV_h3fSYZW9Inzem9-K/view?usp=sharing 
+
 ## Features
 
 -   **Persistent Job Queue:** Job data persists across restarts using Redis.
